@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Club KPI Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --line: #d8deea;
+      --text: #172033;
+      --muted: #5d6982;
+      --good: #177245;
+      --good-bg: #e7f7ef;
+      --bad: #b42318;
+      --bad-bg: #fdeceb;
+      --wait: #9a6700;
+      --wait-bg: #fff4db;
+      --shadow: 0 12px 28px rgba(23, 32, 51, 0.08);
+      --dark: #172033;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .page {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: end;
+      margin-bottom: 20px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.1;
+    }
+
+    .title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .control {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 160px;
+    }
+
+    .control label,
+    .filter-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .control input,
+    .control button {
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+
+    .control button {
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .control button.primary,
+    .segment.active {
+      background: var(--dark);
+      color: #fff;
+      border-color: var(--dark);
+    }
+
+    .control button.secondary,
+    .segment {
+      background: #fff;
+      color: var(--dark);
+    }
+
+    .statusbar,
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      align-items: center;
+    }
+
+    .status-pill {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--muted);
+      box-shadow: var(--shadow);
+    }
+
+    .segment-group {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .segment {
+      border: 0;
+      border-right: 1px solid var(--line);
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      min-width: 110px;
+    }
+
+    .segment:last-child {
+      border-right: 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .panel-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .row-table-wrap {
+      padding: 18px;
+    }
+
+    .row-head,
+    .member-row {
+      display: grid;
+      grid-template-columns:
+        minmax(220px, 2.3fr)
+        minmax(70px, 0.7fr)
+        minmax(100px, 1fr)
+        minmax(120px, 1.2fr)
+        minmax(100px, 1fr)
+        minmax(120px, 1.2fr)
+        minmax(120px, 1.2fr)
+        minmax(110px, 1fr)
+        minmax(100px, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .row-head {
+      padding: 0 10px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+    }
+
+    .rows {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .member-row {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px 20px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(23, 32, 51, 0.06);
+    }
+
+    .cell {
+      min-width: 0;
+    }
+
+    .cell.member {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .member-name {
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .member-uid {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .cell-value {
+      font-size: 16px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .cell-value.muted {
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .badge.good { color: var(--good); background: var(--good-bg); }
+    .badge.bad { color: var(--bad); background: var(--bad-bg); }
+    .badge.wait { color: var(--wait); background: var(--wait-bg); }
+    .badge.none { color: var(--muted); background: #eef2f8; }
+
+    .muted { color: var(--muted); }
+    .positive { color: var(--good); }
+    .negative { color: var(--bad); }
+    .empty-state {
+      padding: 24px 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 860px) {
+      .page { padding: 16px; }
+      .header { align-items: stretch; }
+      .toolbar { width: 100%; }
+      .control { min-width: 100%; }
+      .segment { min-width: 92px; }
+      .row-head {
+        display: none;
+      }
+      .member-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .cell::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+        font-weight: 700;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="title">
+        <h1>Club KPI Dashboard</h1>
+        <p>Theo doi KPI 10,000,000 fan trong 7 ngay cho tung member.</p>
+      </div>
+      <div class="toolbar">
+        <div class="control">
+          <label for="oldDate">Date-Old</label>
+          <input id="oldDate" type="date">
+        </div>
+        <div class="control">
+          <label>&nbsp;</label>
+          <button id="refreshBtn" class="primary">Refresh KPI</button>
+        </div>
+        <div class="control">
+          <label>&nbsp;</label>
+          <button id="importOldBtn" class="secondary">Import Date-Old</button>
+        </div>
+        <div class="control">
+          <label>&nbsp;</label>
+          <button id="importBtn" class="secondary">Import Members</button>
+        </div>
+        <div class="control">
+          <label>&nbsp;</label>
+          <button id="syncBtn" class="secondary">Import Date-Now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <div class="status-pill" id="summaryMembers">Members: -</div>
+      <div class="status-pill" id="summaryMet">Dat KPI: -</div>
+      <div class="status-pill" id="summaryMissing">Thieu KPI: -</div>
+      <div class="status-pill" id="summaryInfo">Trang thai: San sang</div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-label">Loc KPI</div>
+      <div class="segment-group">
+        <button class="segment active" data-filter="all">Tat ca</button>
+        <button class="segment" data-filter="met">Du KPI</button>
+        <button class="segment" data-filter="not-met">Chua du KPI</button>
+        <button class="segment" data-filter="no-data">Khong du lieu</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Bang KPI Members</h2>
+        <p>Date-Old lay tu bang fan_snapshots. Date-Now lay tu bang fan_snapshots_new sau lan import moi nhat.</p>
+      </div>
+      <div class="row-table-wrap">
+        <div class="row-head">
+          <div>Ten Member</div>
+          <div>UID</div>
+          <div>Date-Old</div>
+          <div>Fan Old</div>
+          <div>Date-Now</div>
+          <div>Fan Now</div>
+          <div>Fan Tang</div>
+          <div>KPI</div>
+          <div>Fan Thieu</div>
+        </div>
+        <div id="cardsContainer" class="rows"></div>
+      </div>
+      <div id="emptyState" class="empty-state" style="display:none;">Khong co member nao phu hop voi bo loc hien tai.</div>
+    </div>
+  </div>
+
+  <script>
+    const oldDateInput = document.getElementById("oldDate");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const importOldBtn = document.getElementById("importOldBtn");
+    const importBtn = document.getElementById("importBtn");
+    const syncBtn = document.getElementById("syncBtn");
+    const cardsContainer = document.getElementById("cardsContainer");
+    const emptyState = document.getElementById("emptyState");
+    const summaryMembers = document.getElementById("summaryMembers");
+    const summaryMet = document.getElementById("summaryMet");
+    const summaryMissing = document.getElementById("summaryMissing");
+    const summaryInfo = document.getElementById("summaryInfo");
+    const filterButtons = Array.from(document.querySelectorAll("[data-filter]"));
+
+    let allRows = [];
+    let activeFilter = "all";
+
+    function formatNumber(value) {
+      if (value === null || value === undefined) return "-";
+      return new Intl.NumberFormat("en-US").format(value);
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "-";
+      return date.toLocaleDateString("en-GB");
+    }
+
+    function badgeClass(status) {
+      if (status === "Dat KPI") return "good";
+      if (status === "Thieu KPI") return "bad";
+      if (status === "Chua du 7 ngay") return "wait";
+      return "none";
+    }
+
+    function filterRows(rows) {
+      if (activeFilter === "met") {
+        return rows.filter((row) => row.kpi_status === "Dat KPI");
+      }
+      if (activeFilter === "not-met") {
+        return rows.filter((row) => row.kpi_status === "Thieu KPI" || row.kpi_status === "Chua du 7 ngay");
+      }
+      if (activeFilter === "no-data") {
+        return rows.filter((row) => row.kpi_status === "Khong co du lieu");
+      }
+      return rows;
+    }
+
+    function renderCards(rows) {
+      const visibleRows = filterRows(rows);
+      if (!visibleRows.length) {
+        cardsContainer.innerHTML = "";
+        emptyState.style.display = "block";
+        return;
+      }
+
+      emptyState.style.display = "none";
+      cardsContainer.innerHTML = visibleRows.map((row) => {
+        const deltaClass = row.fan_delta === null
+          ? "muted"
+          : (row.fan_delta >= 10000000 ? "positive" : "negative");
+
+        return `
+          <article class="member-row">
+            <div class="cell member" data-label="Ten Member">
+              <div class="member-name">${row.member_name}</div>
+            </div>
+            <div class="cell" data-label="UID">
+              <div class="cell-value">${row.uid}</div>
+            </div>
+            <div class="cell" data-label="Date-Old">
+              <div class="cell-value muted">${formatDate(row.date_old)}</div>
+            </div>
+            <div class="cell" data-label="Fan Old">
+              <div class="cell-value">${formatNumber(row.fan_old)}</div>
+            </div>
+            <div class="cell" data-label="Date-Now">
+              <div class="cell-value muted">${formatDate(row.date_now)}</div>
+            </div>
+            <div class="cell" data-label="Fan Now">
+              <div class="cell-value">${formatNumber(row.fan_now)}</div>
+            </div>
+            <div class="cell" data-label="Fan Tang">
+              <div class="cell-value ${deltaClass}">${formatNumber(row.fan_delta)}</div>
+            </div>
+            <div class="cell" data-label="KPI">
+              <span class="badge ${badgeClass(row.kpi_status)}">${row.kpi_status}</span>
+            </div>
+            <div class="cell" data-label="Fan Thieu">
+              <div class="cell-value">${formatNumber(row.fan_missing)}</div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderSummary(rows) {
+      const total = rows.length;
+      const met = rows.filter((row) => row.kpi_met).length;
+      const missing = rows.filter((row) => row.kpi_status === "Thieu KPI" || row.kpi_status === "Chua du 7 ngay").length;
+      summaryMembers.textContent = `Members: ${total}`;
+      summaryMet.textContent = `Dat KPI: ${met}`;
+      summaryMissing.textContent = `Chua du KPI: ${missing}`;
+    }
+
+    function renderAll(rows) {
+      allRows = rows;
+      renderSummary(rows);
+      renderCards(rows);
+    }
+
+    async function loadKpiTable() {
+      const oldDate = oldDateInput.value;
+      summaryInfo.textContent = "Trang thai: Dang tai KPI...";
+      const response = await fetch(`/api/reports/kpi-table?old_date=${oldDate}`);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Khong doc duoc loi API." }));
+        throw new Error(error.detail || "Khong tai duoc KPI table.");
+      }
+      const rows = await response.json();
+      renderAll(rows);
+      summaryInfo.textContent = "Trang thai: KPI da cap nhat";
+    }
+
+    async function importMembers() {
+      summaryInfo.textContent = "Trang thai: Dang import member tu web...";
+      const response = await fetch("/api/members/import-from-web?requested_by=admin", { method: "POST" });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Khong import duoc member." }));
+        throw new Error(error.detail || "Import members failed.");
+      }
+      await loadKpiTable();
+      summaryInfo.textContent = "Trang thai: Import member thanh cong";
+    }
+
+    async function importOldDate() {
+      const oldDate = oldDateInput.value;
+      if (!oldDate) {
+        throw new Error("Ban can chon Date-Old truoc khi import.");
+      }
+
+      summaryInfo.textContent = `Trang thai: Dang import Date-Old ${oldDate} tu web...`;
+      const response = await fetch("/api/sync/import-old", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requested_by: "admin",
+          source_type: "uma_moe",
+          snapshot_date: oldDate,
+          auto_create_missing_members: true
+        })
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Khong import duoc Date-Old." }));
+        throw new Error(error.detail || "Import Date-Old failed.");
+      }
+      await loadKpiTable();
+      summaryInfo.textContent = `Trang thai: Import Date-Old ${oldDate} thanh cong`;
+    }
+
+    async function syncFans() {
+      summaryInfo.textContent = "Trang thai: Dang import Date-Now tu web...";
+      const response = await fetch("/api/sync/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requested_by: "admin",
+          source_type: "uma_moe",
+          auto_create_missing_members: true
+        })
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Khong import duoc Date-Now." }));
+        throw new Error(error.detail || "Import Date-Now failed.");
+      }
+      await loadKpiTable();
+      summaryInfo.textContent = "Trang thai: Import Date-Now thanh cong";
+    }
+
+    refreshBtn.addEventListener("click", async () => {
+      try {
+        await loadKpiTable();
+      } catch (error) {
+        summaryInfo.textContent = `Trang thai: ${error.message}`;
+      }
+    });
+
+    importOldBtn.addEventListener("click", async () => {
+      try {
+        await importOldDate();
+      } catch (error) {
+        summaryInfo.textContent = `Trang thai: ${error.message}`;
+      }
+    });
+
+    importBtn.addEventListener("click", async () => {
+      try {
+        await importMembers();
+      } catch (error) {
+        summaryInfo.textContent = `Trang thai: ${error.message}`;
+      }
+    });
+
+    syncBtn.addEventListener("click", async () => {
+      try {
+        await syncFans();
+      } catch (error) {
+        summaryInfo.textContent = `Trang thai: ${error.message}`;
+      }
+    });
+
+    filterButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        activeFilter = button.dataset.filter;
+        filterButtons.forEach((item) => item.classList.toggle("active", item === button));
+        renderCards(allRows);
+      });
+    });
+
+    function setDefaultOldDate() {
+      const now = new Date();
+      now.setDate(now.getDate() - 7);
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      oldDateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    async function bootstrap() {
+      setDefaultOldDate();
+      try {
+        await loadKpiTable();
+      } catch (error) {
+        summaryInfo.textContent = `Trang thai: ${error.message}`;
+        cardsContainer.innerHTML = "";
+        emptyState.style.display = "block";
+        emptyState.textContent = "Khong tai duoc du lieu KPI. Ban co the bam Import Members, Import Date-Old hoac Import Date-Now.";
+      }
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
