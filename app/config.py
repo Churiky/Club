@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, alias="APP_PORT")
     app_debug: bool = Field(default=True, alias="APP_DEBUG")
 
+    database_url: str | None = Field(default=None, alias="DATABASE_URL")
     db_driver: str = Field(default="ODBC Driver 17 for SQL Server", alias="DB_DRIVER")
     db_server: str = Field(default=r"localhost\MAY1", alias="DB_SERVER")
     db_name: str = Field(default="UmaClubKPI", alias="DB_NAME")
@@ -65,6 +66,11 @@ class Settings(BaseSettings):
 
     @property
     def sqlalchemy_database_url(self) -> str:
+        if self.database_url:
+            if self.database_url.startswith("postgresql://"):
+                return self.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+            return self.database_url
+
         connection_string = (
             f"DRIVER={{{self.effective_db_driver}}};"
             f"SERVER={self.db_server};"

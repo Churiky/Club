@@ -257,17 +257,15 @@ class SnapshotRepository:
                     m.role_name,
                     m.status_name,
                     m.is_active,
-                    COALESCE(now_snap.fan_count, old_view.fan_count) AS fan_count,
-                    COALESCE(now_snap.monthly_gain, old_view.monthly_gain) AS monthly_gain,
-                    COALESCE(now_snap.daily_gain, old_view.daily_gain) AS daily_gain,
-                    COALESCE(now_snap.seven_day_avg, old_view.seven_day_avg) AS seven_day_avg,
-                    COALESCE(now_snap.captured_at, old_view.captured_at) AS captured_at,
-                    COALESCE(now_snap.source_type, old_view.source_type) AS source_type
+                    COALESCE(now_snap.fan_count, latest_snap.fan_count) AS fan_count,
+                    COALESCE(now_snap.monthly_gain, latest_snap.monthly_gain) AS monthly_gain,
+                    COALESCE(now_snap.daily_gain, latest_snap.daily_gain) AS daily_gain,
+                    COALESCE(now_snap.seven_day_avg, latest_snap.seven_day_avg) AS seven_day_avg,
+                    COALESCE(now_snap.captured_at, latest_snap.captured_at) AS captured_at,
+                    COALESCE(now_snap.source_type, latest_snap.source_type) AS source_type
                 FROM app.members m
-                LEFT JOIN app.v_member_current_kpi old_view
-                    ON old_view.member_id = m.member_id
-                OUTER APPLY (
-                    SELECT TOP 1
+                LEFT JOIN LATERAL (
+                    SELECT
                         fs.fan_count,
                         fs.monthly_gain,
                         fs.daily_gain,
@@ -277,8 +275,22 @@ class SnapshotRepository:
                     FROM app.fan_snapshots_new fs
                     WHERE fs.member_id = m.member_id
                     ORDER BY fs.captured_at DESC, fs.snapshot_new_id DESC
-                ) now_snap
-                WHERE m.is_active = 1
+                    LIMIT 1
+                ) AS now_snap ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT
+                        fs.fan_count,
+                        fs.monthly_gain,
+                        fs.daily_gain,
+                        fs.seven_day_avg,
+                        fs.captured_at,
+                        fs.source_type
+                    FROM app.fan_snapshots fs
+                    WHERE fs.member_id = m.member_id
+                    ORDER BY fs.captured_at DESC, fs.snapshot_id DESC
+                    LIMIT 1
+                ) AS latest_snap ON TRUE
+                WHERE m.is_active = TRUE
                   AND m.status_name = 'active'
                 ORDER BY m.club_member_name
                 """

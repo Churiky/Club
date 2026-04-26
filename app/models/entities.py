@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, NVARCHAR, text
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -11,19 +11,19 @@ class Member(Base):
     __table_args__ = {"schema": "app"}
 
     member_id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    club_member_name: Mapped[str] = mapped_column(NVARCHAR(100), unique=True, nullable=False)
-    external_name: Mapped[str | None] = mapped_column(NVARCHAR(100))
-    role_name: Mapped[str] = mapped_column(NVARCHAR(20), nullable=False)
-    status_name: Mapped[str] = mapped_column(NVARCHAR(20), nullable=False)
+    club_member_name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    external_name: Mapped[str | None] = mapped_column(String(100))
+    role_name: Mapped[str] = mapped_column(String(20), nullable=False)
+    status_name: Mapped[str] = mapped_column(String(20), nullable=False)
     joined_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False))
     left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False))
-    notes: Mapped[str | None] = mapped_column(NVARCHAR(500))
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("1"))
+    notes: Mapped[str | None] = mapped_column(String(500))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=text("SYSUTCDATETIME()")
+        DateTime(timezone=False), server_default=text("CURRENT_TIMESTAMP")
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=text("SYSUTCDATETIME()")
+        DateTime(timezone=False), server_default=text("CURRENT_TIMESTAMP")
     )
 
     snapshots: Mapped[list["FanSnapshot"]] = relationship(back_populates="member")
@@ -34,17 +34,17 @@ class SyncRun(Base):
     __table_args__ = {"schema": "app"}
 
     sync_run_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    trigger_type: Mapped[str] = mapped_column(NVARCHAR(30), nullable=False)
-    source_type: Mapped[str] = mapped_column(NVARCHAR(30), nullable=False)
-    status_name: Mapped[str] = mapped_column(NVARCHAR(20), nullable=False)
+    trigger_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    source_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    status_name: Mapped[str] = mapped_column(String(20), nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False))
-    requested_by: Mapped[str | None] = mapped_column(NVARCHAR(100))
+    requested_by: Mapped[str | None] = mapped_column(String(100))
     total_members: Mapped[int] = mapped_column(Integer, nullable=False)
     success_count: Mapped[int] = mapped_column(Integer, nullable=False)
     fail_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    error_message: Mapped[str | None] = mapped_column(NVARCHAR(2000))
-    raw_payload: Mapped[str | None] = mapped_column(NVARCHAR(4000))
+    error_message: Mapped[str | None] = mapped_column(String(2000))
+    raw_payload: Mapped[str | None] = mapped_column(String(4000))
 
     snapshots: Mapped[list["FanSnapshot"]] = relationship(back_populates="sync_run")
 
@@ -61,9 +61,9 @@ class FanSnapshot(Base):
     daily_gain: Mapped[int | None] = mapped_column(BigInteger)
     seven_day_avg: Mapped[int | None] = mapped_column(BigInteger)
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
-    source_type: Mapped[str] = mapped_column(NVARCHAR(30), nullable=False)
-    source_ref: Mapped[str | None] = mapped_column(NVARCHAR(255))
-    note: Mapped[str | None] = mapped_column(NVARCHAR(500))
+    source_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    source_ref: Mapped[str | None] = mapped_column(String(255))
+    note: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))
 
     member: Mapped["Member"] = relationship(back_populates="snapshots")
@@ -82,9 +82,9 @@ class FanSnapshotNew(Base):
     daily_gain: Mapped[int | None] = mapped_column(BigInteger)
     seven_day_avg: Mapped[int | None] = mapped_column(BigInteger)
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
-    source_type: Mapped[str] = mapped_column(NVARCHAR(30), nullable=False)
-    source_ref: Mapped[str | None] = mapped_column(NVARCHAR(255))
-    note: Mapped[str | None] = mapped_column(NVARCHAR(500))
+    source_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    source_ref: Mapped[str | None] = mapped_column(String(255))
+    note: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))
 
 
@@ -95,9 +95,9 @@ class ManualUpdate(Base):
     manual_update_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     member_id: Mapped[int] = mapped_column(ForeignKey("app.members.member_id"), nullable=False)
     snapshot_id: Mapped[int | None] = mapped_column(ForeignKey("app.fan_snapshots.snapshot_id"))
-    updated_by: Mapped[str] = mapped_column(NVARCHAR(100), nullable=False)
+    updated_by: Mapped[str] = mapped_column(String(100), nullable=False)
     fan_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    note: Mapped[str | None] = mapped_column(NVARCHAR(500))
+    note: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))
 
 
@@ -108,7 +108,7 @@ class MemberSyncLog(Base):
     member_sync_log_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     sync_run_id: Mapped[int] = mapped_column(ForeignKey("app.sync_runs.sync_run_id"), nullable=False)
     member_id: Mapped[int] = mapped_column(ForeignKey("app.members.member_id"), nullable=False)
-    status_name: Mapped[str] = mapped_column(NVARCHAR(20), nullable=False)
+    status_name: Mapped[str] = mapped_column(String(20), nullable=False)
     fan_count: Mapped[int | None] = mapped_column(BigInteger)
-    message: Mapped[str | None] = mapped_column(NVARCHAR(1000))
+    message: Mapped[str | None] = mapped_column(String(1000))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))

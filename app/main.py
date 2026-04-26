@@ -9,6 +9,7 @@ from app.api.reports import router as reports_router
 from app.api.sync import router as sync_router
 from app.api.ui import router as ui_router
 from app.config import get_settings
+from app.db import init_database
 from app.jobs.scheduler import shutdown_scheduler, start_scheduler
 
 
@@ -17,6 +18,7 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    init_database()
     start_scheduler(settings)
     yield
     shutdown_scheduler()

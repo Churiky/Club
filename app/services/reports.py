@@ -56,24 +56,26 @@ class ReportService:
                     old_snap.fan_count AS fan_old,
                     now_snap.fan_count AS fan_now
                 FROM app.members m
-                OUTER APPLY (
-                    SELECT TOP 1
+                LEFT JOIN LATERAL (
+                    SELECT
                         fs.captured_at,
                         fs.fan_count
                     FROM app.fan_snapshots_new fs
                     WHERE fs.member_id = m.member_id
                     ORDER BY fs.captured_at DESC, fs.snapshot_new_id DESC
-                ) now_snap
-                OUTER APPLY (
-                    SELECT TOP 1
+                    LIMIT 1
+                ) AS now_snap ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT
                         fs.captured_at,
                         fs.fan_count
                     FROM app.fan_snapshots fs
                     WHERE fs.member_id = m.member_id
                       AND fs.captured_at <= :old_date_end
                     ORDER BY fs.captured_at DESC, fs.snapshot_id DESC
-                ) old_snap
-                WHERE m.is_active = 1
+                    LIMIT 1
+                ) AS old_snap ON TRUE
+                WHERE m.is_active = TRUE
                   AND m.status_name = 'active'
                 ORDER BY m.club_member_name
                 """
